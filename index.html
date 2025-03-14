@@ -12,17 +12,25 @@
         <img src="logo.png" alt="Confessions Logo" class="logo" id="logo">
         <svg id="web-lines" class="web-lines"></svg>
         <div class="topics">
-            <button class="topic" data-topic="Deals" style="--angle: 0deg;">Deals</button>
-            <button class="topic" data-topic="Ideas" style="--angle: 72deg;">Ideas</button>
-            <button class="topic" data-topic="Secrets" style="--angle: 144deg;">Secrets</button>
-            <button class="topic" data-topic="Dreams" style="--angle: 216deg;">Dreams</button>
-            <button class="topic" data-topic="Fears" style="--angle: 288deg;">Fears</button>
+            <div class="topic" data-topic="Deals" style="--angle: 0deg;">Deals</div>
+            <div class="topic" data-topic="Ideas" style="--angle: 72deg;">Ideas</div>
+            <div class="topic" data-topic="Secrets" style="--angle: 144deg;">Secrets</div>
+            <div class="topic" data-topic="Dreams" style="--angle: 216deg;">Dreams</div>
+            <div class="topic" data-topic="Fears" style="--angle: 288deg;">Fears</div>
         </div>
         <div class="confession-window" id="confession-window">
             <h1 id="subject-title">Confessions Of...</h1>
             <button onclick="adminSetSubject()" class="admin-btn">Admin: Set Subject</button>
             <form id="confession-form">
                 <p id="prompt">Write your confession...</p>
+                <select id="category" required>
+                    <option value="" disabled selected>Select a category</option>
+                    <option value="Deals">Deals</option>
+                    <option value="Ideas">Ideas</option>
+                    <option value="Secrets">Secrets</option>
+                    <option value="Dreams">Dreams</option>
+                    <option value="Fears">Fears</option>
+                </select>
                 <textarea id="confession-input" placeholder="Share your confession..." maxlength="280" required></textarea>
                 <select id="mood">
                     <option value="">No Mood</option>
