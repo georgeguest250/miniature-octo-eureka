@@ -1,32 +1,37 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confessions Of</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Dancing+Script&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Dancing+Script&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1 id="subject-title">Confessions Of...</h1>
-        <button onclick="adminSetSubject()" class="admin-btn">Admin: Set Subject</button>
+    <div class="page-container">
+        <img src="logo.png" alt="Confessions Logo" class="logo" id="logo">
+        <div class="confession-window">
+            <h1 id="subject-title">Confessions Of...</h1>
+            <button onclick="adminSetSubject()" class="admin-btn">Admin: Set Subject</button>
 
-        <form id="confession-form">
-            <p id="prompt">Write your confession...</p>
-            <textarea id="confession-input" placeholder="Write your confession..." maxlength="280" required></textarea>
-            <select id="mood">
-                <option value="">No Mood</option>
-                <option value="😢">Sad</option>
-                <option value="😂">Funny</option>
-                <option value="😡">Angry</option>
-                <option value="😍">Love</option>
-            </select>
-            <button type="submit">Submit</button>
-        </form>
+            <form id="confession-form">
+                <p id="prompt">Write your confession...</p>
+                <textarea id="confession-input" placeholder="Share your confession..." maxlength="280" required></textarea>
+                <select id="mood">
+                    <option value="">No Mood</option>
+                    <option value="😢">Sad</option>
+                    <option value="😂">Funny</option>
+                    <option value="😡">Angry</option>
+                    <option value="😍">Love</option>
+                </select>
+                <button type="submit">Submit</button>
+            </form>
 
-        <div id="confessions-list"></div>
+            <div id="confessions-list"></div>
+        </div>
     </div>
     <canvas id="reelCanvas" width="400" height="600" style="display:none;"></canvas>
     <script src="script.js"></script>
 </body>
 </html>
+
