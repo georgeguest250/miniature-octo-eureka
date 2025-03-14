@@ -31,7 +31,12 @@
                     <option value="Dreams">Dreams</option>
                     <option value="Fears">Fears</option>
                 </select>
-                <textarea id="confession-input" placeholder="Share your confession..." maxlength="280" required></textarea>
+                <select id="parent-confession">
+                    <option value="">New Confession</option>
+                </select>
+                <textarea id="confession-input" placeholder="Share your confession..." maxlength="280"></textarea>
+                <input type="file" id="media-input" accept="image/*,video/*" style="margin: 8px 0;">
+                <input type="url" id="link-input" placeholder="Or paste a link (optional)" style="margin: 8px 0;">
                 <select id="mood">
                     <option value="">No Mood</option>
                     <option value="😢">Sad</option>
