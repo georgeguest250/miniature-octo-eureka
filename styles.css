@@ -55,6 +55,11 @@ body {
     font-size: 14px;
     transform: translate(-50%, -50%) translate(300px, 0) rotate(var(--angle));
     transform-origin: 0 0;
+    cursor: pointer;
+}
+
+.topic:hover, .topic.active {
+    background-color: #D4A017;
 }
 
 .confession-window {
@@ -62,7 +67,7 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 350px; /* Slightly smaller to avoid overlap */
+    width: 350px;
     background: #ffffff;
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
@@ -132,6 +137,18 @@ button:hover {
     max-width: 200px;
     text-align: center;
     z-index: 2;
+}
+
+.confession img, .confession video {
+    max-width: 100%;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+
+.confession a {
+    color: #1A2A44;
+    text-decoration: underline;
+    word-break: break-all;
 }
 
 .confession.exit {
