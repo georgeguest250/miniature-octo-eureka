@@ -1,29 +1,65 @@
+css
+
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    font-family: "Montserrat", Arial, sans-serif;
+    background-color: #f1f3f5;
     margin: 0;
-    padding: 20px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
     transition: background 0.5s;
 }
 
-.container {
-    max-width: 800px;
-    margin: 0 auto;
+.page-container {
+    position: relative;
     text-align: center;
+}
+
+.logo {
+    width: 300px; /* Adjust based on your logo size */
+    height: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+    opacity: 0.1; /* Subtle background effect */
+}
+
+.confession-window {
+    position: relative;
+    width: 400px; /* Small, fixed width */
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    z-index: 1;
+    border: 1px solid #e0e0e0;
 }
 
 h1 {
     color: #1A2A44;
-    font-family: "Montserrat", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 10px;
 }
 
 input, textarea, select {
     width: 100%;
     padding: 10px;
-    margin: 5px 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    margin: 8px 0;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
     box-sizing: border-box;
+    font-size: 14px;
+    background: #fafafa;
+}
+
+textarea {
+    resize: none;
+    height: 80px;
 }
 
 button {
@@ -31,8 +67,10 @@ button {
     color: white;
     padding: 10px 20px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s;
 }
 
 button:hover {
@@ -40,17 +78,18 @@ button:hover {
 }
 
 #prompt {
-    font-style: italic;
+    font-family: "Dancing Script", cursive;
+    font-size: 16px;
     color: #666;
     margin: 10px 0;
 }
 
 .confession {
-    background: white;
-    padding: 15px;
+    background: #f9f9f9;
+    padding: 12px;
     margin: 10px 0;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     position: relative;
     animation: fadeInBounce 0.5s ease-in-out;
 }
@@ -70,17 +109,17 @@ button:hover {
 
 progress {
     width: 100%;
-    height: 10px;
+    height: 8px;
     margin-top: 5px;
     appearance: none;
 }
 progress::-webkit-progress-bar { 
-    background: #eee; 
-    border-radius: 5px; 
+    background: #e0e0e0; 
+    border-radius: 4px; 
 }
 progress::-webkit-progress-value { 
     background: linear-gradient(to right, #28a745, #dc3545); 
-    border-radius: 5px; 
+    border-radius: 4px; 
 }
 .urgent { 
     border: 1px solid #dc3545; 
@@ -91,6 +130,7 @@ progress::-webkit-progress-value {
 .urgent-text { 
     color: #dc3545; 
     font-weight: bold; 
+    font-size: 12px; 
 }
 
 .survived {
@@ -99,8 +139,9 @@ progress::-webkit-progress-value {
     right: 5px;
     background: #D4A017;
     color: white;
-    padding: 5px;
-    border-radius: 3px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
     animation: flash 1s infinite;
 }
 
@@ -109,7 +150,7 @@ progress::-webkit-progress-value {
     padding: 5px 10px;
     font-size: 12px;
     margin-bottom: 10px;
-    display: none; /* Hidden unless admin activates */
+    display: none;
 }
 .admin-btn:hover {
     background-color: #999;
@@ -119,8 +160,9 @@ progress::-webkit-progress-value {
     width: 70%;
     padding: 5px;
     margin: 5px 0;
-    border: 1px solid #ccc;
+    border: 1px solid #dcdcdc;
     border-radius: 4px;
+    font-size: 12px;
 }
 .reply-btn {
     padding: 5px 10px;
@@ -131,7 +173,7 @@ progress::-webkit-progress-value {
 }
 .replies {
     font-size: 12px;
-    color: #333;
+    color: #444;
     margin-top: 5px;
 }
 .share-btn {
@@ -167,7 +209,8 @@ progress::-webkit-progress-value {
 }
 
 @media (max-width: 600px) {
-    textarea { height: 80px; }
-    button { padding: 8px 16px; }
+    .confession-window { width: 90%; }
+    .logo { width: 200px; }
     .reply-input { width: 60%; }
 }
+
