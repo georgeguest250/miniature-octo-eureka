@@ -3,7 +3,6 @@ let subject = "Confessions Of...";
 const adminPassword = "yourSecretPassword"; // Change this
 const prompts = ["I regret...", "I secretly love...", "I’ll never admit...", "I once hid..."];
 let promptIndex = 0;
-let selectedTopic = null;
 
 function adminSetSubject() {
     const password = prompt("Enter admin password:");
@@ -32,28 +31,17 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
-document.querySelectorAll(".topic").forEach(button => {
-    button.addEventListener("click", () => {
-        document.querySelectorAll(".topic").forEach(btn => btn.classList.remove("active"));
-        button.classList.add("active");
-        selectedTopic = button.dataset.topic;
-    });
-});
-
 document.getElementById("confession-form").addEventListener("submit", function(e) {
     e.preventDefault();
-    if (!selectedTopic) {
-        alert("Please select a topic first!");
-        return;
-    }
     const text = document.getElementById("confession-input").value.trim();
     const mood = document.getElementById("mood").value;
-    if (text) {
+    const category = document.getElementById("category").value;
+    if (text && category) {
         const confession = {
             id: Date.now(),
             text,
             mood,
-            topic: selectedTopic,
+            topic: category,
             likes: 0,
             dislikes: 0,
             timer: null,
@@ -64,6 +52,7 @@ document.getElementById("confession-form").addEventListener("submit", function(e
         confessions.push(confession);
         document.getElementById("confession-input").value = "";
         document.getElementById("mood").value = "";
+        document.getElementById("category").value = "";
         document.getElementById("confession-window").classList.add("hidden");
         renderConfessions();
     }
@@ -77,11 +66,11 @@ function renderConfessions() {
     confessions = confessions.filter(c => c.likes - c.dislikes > -5 || !c.timer);
 
     confessions.forEach((confession, index) => {
-        const topicButton = document.querySelector(`.topic[data-topic="${confession.topic}"]`);
-        const topicRect = topicButton.getBoundingClientRect();
+        const topicElement = document.querySelector(`.topic[data-topic="${confession.topic}"]`);
+        const topicRect = topicElement.getBoundingClientRect();
         const logoRect = document.getElementById("logo").getBoundingClientRect();
-        const angle = parseFloat(topicButton.style.getPropertyValue("--angle")) * Math.PI / 180;
-        const radius = 250; // Distance from logo center
+        const angle = parseFloat(topicElement.style.getPropertyValue("--angle")) * Math.PI / 180;
+        const radius = 350; // Increased radius for confessions
         const x = logoRect.left + logoRect.width / 2 + radius * Math.cos(angle) - 100; // Center confession
         const y = logoRect.top + logoRect.height / 2 + radius * Math.sin(angle) - 50;
 
