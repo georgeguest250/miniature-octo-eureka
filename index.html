@@ -6,6 +6,10 @@
     <title>Confessions Web</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Dancing+Script&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js"></script>
 </head>
 <body>
     <div class="page-container">
@@ -18,9 +22,16 @@
             <div class="topic" data-topic="Dreams" style="--angle: 216deg;">Dreams</div>
             <div class="topic" data-topic="Fears" style="--angle: 288deg;">Fears</div>
         </div>
-        <div class="confession-window" id="confession-window">
+        <div class="auth-container" id="auth-container">
+            <button id="login-btn">Login</button>
+            <button id="register-btn">Register</button>
+            <button id="logout-btn" style="display:none;">Logout</button>
+            <button id="profile-btn" style="display:none;">Profile</button>
+        </div>
+        <div class="confession-window" id="confession-window" style="display:none;">
             <h1 id="subject-title">Confessions Of...</h1>
             <button onclick="adminSetSubject()" class="admin-btn">Admin: Set Subject</button>
+            <button onclick="showAdminArea()" class="admin-btn">Admin Area</button>
             <form id="confession-form">
                 <p id="prompt">Write your confession...</p>
                 <select id="category" required>
@@ -48,6 +59,20 @@
             </form>
         </div>
         <div id="confessions-list"></div>
+        <div id="profile-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close" onclick="closeProfile()">×</span>
+                <h2>Your Confessions</h2>
+                <div id="profile-confessions"></div>
+            </div>
+        </div>
+        <div id="admin-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close" onclick="closeAdminArea()">×</span>
+                <h2>Admin Area</h2>
+                <div id="admin-confessions"></div>
+            </div>
+        </div>
     </div>
     <canvas id="reelCanvas" width="400" height="600" style="display:none;"></canvas>
     <script src="script.js"></script>
