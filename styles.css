@@ -28,6 +28,42 @@ body {
     opacity: 0.1;
 }
 
+.web-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.topics {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    z-index: 2;
+}
+
+.topic {
+    position: absolute;
+    background-color: #1A2A44;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    transform: translate(-50%, -50%) translate(200px, 0) rotate(var(--angle));
+    transform-origin: 0 0;
+    transition: background 0.3s;
+}
+
+.topic:hover, .topic.active {
+    background-color: #D4A017;
+}
+
 .confession-window {
     position: absolute;
     top: 50%;
@@ -38,7 +74,7 @@ body {
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     padding: 20px;
-    z-index: 1;
+    z-index: 3;
     border: 1px solid #e0e0e0;
     transition: opacity 0.3s ease;
 }
@@ -103,7 +139,6 @@ button:hover {
     max-width: 200px;
     text-align: center;
     z-index: 2;
-    animation: circleLogo 10s linear infinite;
 }
 
 .confession.exit {
@@ -197,14 +232,6 @@ progress::-webkit-progress-value {
     background-color: #218838;
 }
 
-@keyframes circleLogo {
-    0% { transform: translate(-50%, -50%) translate(200px, 0) rotate(0deg); }
-    25% { transform: translate(-50%, -50%) translate(0, -200px) rotate(90deg); }
-    50% { transform: translate(-50%, -50%) translate(-200px, 0) rotate(180deg); }
-    75% { transform: translate(-50%, -50%) translate(0, 200px) rotate(270deg); }
-    100% { transform: translate(-50%, -50%) translate(200px, 0) rotate(360deg); }
-}
-
 @keyframes poofOut {
     0% { opacity: 1; transform: scale(1); }
     100% { opacity: 0; transform: scale(0.8); filter: blur(2px); }
@@ -226,6 +253,7 @@ progress::-webkit-progress-value {
 @media (max-width: 600px) {
     .confession-window { width: 90%; }
     .logo { width: 200px; }
+    .topic { transform: translate(-50%, -50%) translate(150px, 0) rotate(var(--angle)); }
     .reply-input { width: 60%; }
     .confession { max-width: 150px; font-size: 12px; }
 }
