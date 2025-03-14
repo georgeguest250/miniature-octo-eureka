@@ -9,8 +9,8 @@
 </head>
 <body>
     <div class="page-container">
-        <img src="https://placehold.co/300x200" alt="Confessions Logo" class="logo" id="logo">
-        <div class="confession-window">
+        <img src="logo.png" alt="Confessions Logo" class="logo" id="logo">
+        <div class="confession-window" id="confession-window">
             <h1 id="subject-title">Confessions Of...</h1>
             <button onclick="adminSetSubject()" class="admin-btn">Admin: Set Subject</button>
 
@@ -26,12 +26,10 @@
                 </select>
                 <button type="submit">Submit</button>
             </form>
-
-            <div id="confessions-list"></div>
         </div>
+        <div id="confessions-list"></div>
     </div>
     <canvas id="reelCanvas" width="400" height="600" style="display:none;"></canvas>
     <script src="script.js"></script>
 </body>
 </html>
-
