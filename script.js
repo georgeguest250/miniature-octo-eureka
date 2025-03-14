@@ -1,22 +1,77 @@
+const firebaseConfig = {
+    apiKey: "your-api-key",
+    authDomain: "your-project.firebaseapp.com",
+    projectId: "your-project",
+    storageBucket: "your-project.appspot.com",
+    messagingSenderId: "your-sender-id",
+    appId: "your-app-id"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage().ref();
+
 let confessions = [];
 let subject = "Confessions Of...";
-const adminPassword = "yourSecretPassword"; // Change this
 const prompts = ["I regret...", "I secretly love...", "I’ll never admit...", "I once hid..."];
 let promptIndex = 0;
 let activeTopic = null;
+let currentUser = null;
+let lastPostTime = 0;
+
+auth.onAuthStateChanged(async user => {
+    currentUser = user;
+    document.getElementById("login-btn").style.display = user ? "none" : "inline-block";
+    document.getElementById("register-btn").style.display = user ? "none" : "inline-block";
+    document.getElementById("logout-btn").style.display = user ? "inline-block" : "none";
+    document.getElementById("profile-btn").style.display = user ? "inline-block" : "none";
+    document.getElementById("confession-window").style.display = user && user.emailVerified ? "block" : "none";
+    if (user) {
+        const token = await user.getIdTokenResult();
+        document.querySelectorAll(".admin-btn").forEach(btn => btn.style.display = token.claims.admin ? "inline-block" : "none");
+    }
+});
+
+document.getElementById("login-btn").addEventListener("click", () => {
+    const email = prompt("Enter your email:");
+    const password = prompt("Enter your password:");
+    auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+            if (!auth.currentUser.emailVerified) {
+                auth.currentUser.sendEmailVerification();
+                alert("Please verify your email to post confessions.");
+            }
+        })
+        .catch(err => alert(err.message));
+});
+
+document.getElementById("register-btn").addEventListener("click", () => {
+    const email = prompt("Enter your email:");
+    const password = prompt("Enter your password:");
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(() => auth.currentUser.sendEmailVerification())
+        .then(() => alert("Registration successful! Please verify your email."))
+        .catch(err => alert(err.message));
+});
+
+document.getElementById("logout-btn").addEventListener("click", () => auth.signOut());
+
+document.getElementById("profile-btn").addEventListener("click", showProfile);
 
 function adminSetSubject() {
-    const password = prompt("Enter admin password:");
-    if (password === adminPassword) {
-        const newSubject = prompt("Enter new subject:");
-        if (newSubject) {
-            subject = `Confessions Of ${newSubject}`;
-            document.getElementById("subject-title").textContent = subject;
-            updateBackground(newSubject.toLowerCase());
+    auth.currentUser.getIdTokenResult().then(token => {
+        if (token.claims.admin) {
+            const newSubject = prompt("Enter new subject:");
+            if (newSubject) {
+                subject = `Confessions Of ${newSubject}`;
+                document.getElementById("subject-title").textContent = subject;
+                updateBackground(newSubject.toLowerCase());
+                db.collection("settings").doc("subject").set({ value: subject });
+            }
+        } else {
+            alert("Admin access required!");
         }
-    } else {
-        alert("Incorrect password!");
-    }
+    });
 }
 
 function updateBackground(subject) {
@@ -25,12 +80,6 @@ function updateBackground(subject) {
     else if (subject.includes("friend")) body.style.background = "linear-gradient(#f6e05e, #ed8936)";
     else body.style.background = "#f1f3f5";
 }
-
-document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && e.key === "a") {
-        document.querySelector(".admin-btn").style.display = "inline-block";
-    }
-});
 
 document.querySelectorAll(".topic").forEach(topic => {
     topic.addEventListener("click", () => {
@@ -52,44 +101,64 @@ function updateParentOptions() {
     });
 }
 
-document.getElementById("confession-form").addEventListener("submit", function(e) {
+document.getElementById("confession-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const text = document.getElementById("confession-input").value.trim();
+    if (!currentUser || !currentUser.emailVerified) return alert("Please verify your email to post.");
+    const now = Date.now();
+    if (now - lastPostTime < 60000) return alert("Please wait 1 minute between posts."); // Rate limit: 1 post/min
+    lastPostTime = now;
+
+    const text = sanitizeInput(document.getElementById("confession-input").value.trim());
     const mood = document.getElementById("mood").value;
     const category = document.getElementById("category").value;
     const parentId = document.getElementById("parent-confession").value;
     const fileInput = document.getElementById("media-input");
     const link = document.getElementById("link-input").value.trim();
-    const media = fileInput.files[0] ? URL.createObjectURL(fileInput.files[0]) : null;
-    const mediaType = fileInput.files[0] ? (fileInput.files[0].type.startsWith("video") ? "video" : "image") : null;
+    let mediaUrl = null;
+    let mediaType = null;
 
-    if (category && (text || media || link)) {
-        const confession = {
-            id: Date.now(),
+    if (fileInput.files[0]) {
+        const file = fileInput.files[0];
+        if (file.size > 5 * 1024 * 1024) return alert("File size must be under 5MB.");
+        const uploadTask = await storage.child(`media/${Date.now()}_${file.name}`).put(file);
+        mediaUrl = await uploadTask.ref.getDownloadURL();
+        mediaType = file.type.startsWith("video") ? "video" : "image";
+    }
+
+    if (category && (text || mediaUrl || link)) {
+        await db.collection("confessions").add({
             text,
             mood,
             topic: category,
             parentId: parentId || null,
-            media,
+            media: mediaUrl,
             mediaType,
             link,
+            userId: currentUser.uid,
             likes: 0,
             dislikes: 0,
-            timer: null,
+            views: 0,
             timeLeft: 0,
             survived: false,
-            replies: []
-        };
-        confessions.push(confession);
-        document.getElementById("confession-input").value = "";
-        document.getElementById("mood").value = "";
-        document.getElementById("category").value = "";
-        document.getElementById("parent-confession").value = "";
-        document.getElementById("media-input").value = "";
-        document.getElementById("link-input").value = "";
+            replies: [],
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById("confession-form").reset();
         document.getElementById("confession-window").classList.add("hidden");
-        updateParentOptions();
-        renderConfessions();
+    }
+});
+
+db.collection("confessions").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+    confessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderConfessions();
+    updateParentOptions();
+});
+
+db.collection("settings").doc("subject").onSnapshot((doc) => {
+    if (doc.exists) {
+        subject = doc.data().value;
+        document.getElementById("subject-title").textContent = subject;
+        updateBackground(subject.split(" ").pop().toLowerCase());
     }
 });
 
@@ -99,7 +168,9 @@ function renderConfessions() {
     list.innerHTML = "";
     svg.innerHTML = "";
     const filteredConfessions = activeTopic ? confessions.filter(c => c.topic === activeTopic || confessions.some(p => p.id === c.parentId && p.topic === activeTopic)) : confessions;
+
     filteredConfessions.forEach((confession, index) => {
+        db.collection("confessions").doc(confession.id).update({ views: confession.views + 1 });
         const logoRect = document.getElementById("logo").getBoundingClientRect();
         let x, y;
         if (!confession.parentId) {
@@ -130,15 +201,15 @@ function renderConfessions() {
             <p>${confession.mood ? confession.mood + " " : ""}${confession.text}</p>
             ${confession.media ? (confession.mediaType === "video" ? `<video src="${confession.media}" controls></video>` : `<img src="${confession.media}">`) : ""}
             ${confession.link ? `<a href="${confession.link}" target="_blank">${confession.link}</a>` : ""}
-            <button onclick="vote(${confession.id}, 'like')">Like (${confession.likes})</button>
-            <button onclick="vote(${confession.id}, 'dislike')">Dislike (${confession.dislikes})</button>
+            <button onclick="vote('${confession.id}', 'like')">Like (${confession.likes})</button>
+            <button onclick="vote('${confession.id}', 'dislike')">Dislike (${confession.dislikes})</button>
             <progress class="${confession.timeLeft < 60 ? 'urgent' : ''}" value="${confession.timeLeft || 0}" max="600"></progress>
             ${confession.timeLeft < 60 ? '<span class="urgent-text">Save It!</span>' : ''}
             ${confession.survived ? '<span class="survived">Survived!</span>' : ''}
             <div class="replies">${confession.replies.slice(0, 3).map(r => `<p>${r}</p>`).join("")}</div>
             <input class="reply-input" id="reply-${confession.id}" placeholder="Add a reply (max 100)" maxlength="100">
-            <button class="reply-btn" onclick="addReply(${confession.id})">Reply</button>
-            ${confession.survived ? `<button class="share-btn" onclick="shareReel(${confession.id})">Share Reel</button>` : ""}
+            <button class="reply-btn" onclick="addReply('${confession.id}')">Reply</button>
+            <button class="share-btn" onclick="shareConfession('${confession.id}')">Share</button>
         `;
         list.appendChild(div);
 
@@ -158,98 +229,121 @@ function renderConfessions() {
         line.setAttribute("stroke-width", "1");
         svg.appendChild(line);
     });
-    updateParentOptions();
 }
 
-function vote(id, type) {
-    const confession = confessions.find(c => c.id === id);
-    const btn = document.querySelector(`[onclick="vote(${id}, '${type}')"]`);
+async function vote(id, type) {
+    const confessionRef = db.collection("confessions").doc(id);
+    const confession = (await confessionRef.get()).data();
     if (type === "like") {
-        confession.likes++;
-        if (!confession.timer) {
-            confession.timeLeft = 600;
-            startTimer(confession);
+        await confessionRef.update({ likes: confession.likes + 1 });
+        if (confession.timeLeft === 0) {
+            await confessionRef.update({ timeLeft: 600 });
+            startTimer(id);
         } else if (confession.timeLeft < 1800) {
-            confession.timeLeft += 300;
+            await confessionRef.update({ timeLeft: confession.timeLeft + 300 });
         }
-        btn.classList.add("like-btn", "clicked");
     } else {
-        confession.dislikes++;
-        btn.classList.add("dislike-btn", "clicked");
+        await confessionRef.update({ dislikes: confession.dislikes + 1 });
     }
-    setTimeout(() => btn.classList.remove("clicked"), 300);
-    renderConfessions();
 }
 
-function startTimer(confession) {
-    confession.timer = setInterval(() => {
-        confession.timeLeft--;
-        if (confession.timeLeft <= 0 || confession.likes - confession.dislikes < -5) {
-            clearInterval(confession.timer);
+async function startTimer(id) {
+    const confessionRef = db.collection("confessions").doc(id);
+    let interval = setInterval(async () => {
+        const confession = (await confessionRef.get()).data();
+        if (confession.timeLeft > 0 && confession.likes - confession.dislikes >= -5) {
+            await confessionRef.update({ timeLeft: confession.timeLeft - 1 });
+        } else {
+            clearInterval(interval);
             if (confession.timeLeft <= 0) {
-                confession.survived = true;
-                renderConfessions();
-                setTimeout(() => confessions = confessions.filter(c => c.id !== confession.id), 2000);
+                await confessionRef.update({ survived: true });
+                setTimeout(() => confessionRef.delete(), 2000);
             } else {
-                const index = confessions.findIndex(c => c.id === confession.id);
-                document.querySelectorAll(".confession")[index].classList.add("exit");
-                setTimeout(() => confessions = confessions.filter(c => c.id !== confession.id), 500);
+                confessionRef.delete();
             }
         }
-        renderConfessions();
     }, 1000);
 }
 
-function addReply(id) {
-    const confession = confessions.find(c => c.id === id);
-    const reply = document.getElementById(`reply-${id}`).value.trim();
+async function addReply(id) {
+    const reply = sanitizeInput(document.getElementById(`reply-${id}`).value.trim());
     if (reply) {
-        confession.replies.push(reply);
+        const confessionRef = db.collection("confessions").doc(id);
+        const confession = (await confessionRef.get()).data();
+        await confessionRef.update({
+            replies: [...confession.replies, reply]
+        });
         document.getElementById(`reply-${id}`).value = "";
-        renderConfessions();
     }
 }
 
-function shareReel(id) {
-    const confession = confessions.find(c => c.id === id);
-    const canvas = document.getElementById("reelCanvas");
-    const ctx = canvas.getContext("2d");
-
-    ctx.fillStyle = "#1A2A44";
-    ctx.fillRect(0, 0, 400, 600);
-    ctx.fillStyle = "white";
-    ctx.font = "bold 24px Montserrat";
-    ctx.textAlign = "center";
-    ctx.fillText(subject, 200, 50);
-    ctx.font = "18px Arial";
-    ctx.fillText(`${confession.mood || ""} ${confession.text}`, 200, 100);
-    ctx.fillStyle = "#D4A017";
-    ctx.font = "16px Arial";
-    confession.replies.slice(0, 3).forEach((reply, i) => {
-        ctx.fillText(reply, 200, 150 + i * 30);
-    });
-    ctx.fillStyle = "white";
-    ctx.font = "12px Arial";
-    ctx.fillText(`Likes: ${confession.likes} | Survived 10m`, 200, 550);
-
-    const dataUrl = canvas.toDataURL("image/png");
+async function shareConfession(id) {
+    const confession = (await db.collection("confessions").doc(id).get()).data();
+    const shareUrl = `${window.location.origin}?confession=${id}`;
     if (navigator.share) {
-        fetch(dataUrl)
-            .then(res => res.blob())
-            .then(blob => {
-                const file = new File([blob], "confession-reel.png", { type: "image/png" });
-                navigator.share({
-                    files: [file],
-                    title: subject,
-                    text: "Check out this confession reel!"
-                });
-            });
+        navigator.share({
+            title: `${confession.mood || ""} ${confession.text}`,
+            text: "Check out this confession!",
+            url: shareUrl
+        });
     } else {
-        const link = document.createElement("a");
-        link.href = dataUrl;
-        link.download = "confession-reel.png";
-        link.click();
+        prompt("Copy this link to share:", shareUrl);
     }
+}
+
+function showProfile() {
+    const modal = document.getElementById("profile-modal");
+    const profileDiv = document.getElementById("profile-confessions");
+    profileDiv.innerHTML = "";
+    const userConfessions = confessions.filter(c => c.userId === currentUser.uid);
+    userConfessions.forEach(conf => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+            <p>${conf.text} (Likes: ${conf.likes}, Dislikes: ${conf.dislikes}, Views: ${conf.views}, ${conf.survived ? "Survived" : "Active"})</p>
+        `;
+        profileDiv.appendChild(div);
+    });
+    modal.style.display = "block";
+}
+
+function closeProfile() {
+    document.getElementById("profile-modal").style.display = "none";
+}
+
+function showAdminArea() {
+    auth.currentUser.getIdTokenResult().then(token => {
+        if (token.claims.admin) {
+            const modal = document.getElementById("admin-modal");
+            const adminDiv = document.getElementById("admin-confessions");
+            adminDiv.innerHTML = "";
+            confessions.forEach(conf => {
+                const div = document.createElement("div");
+                div.innerHTML = `
+                    <p>${conf.text} (Views: ${conf.views}, Likes: ${conf.likes}, Dislikes: ${conf.dislikes})</p>
+                    <button onclick="deleteConfession('${conf.id}')">Delete</button>
+                `;
+                adminDiv.appendChild(div);
+            });
+            modal.style.display = "block";
+        } else {
+            alert("Admin access required!");
+        }
+    });
+}
+
+function closeAdminArea() {
+    document.getElementById("admin-modal").style.display = "none";
+}
+
+async function deleteConfession(id) {
+    await db.collection("confessions").doc(id).delete();
+    closeAdminArea();
+}
+
+function sanitizeInput(input) {
+    const div = document.createElement("div");
+    div.textContent = input;
+    return div.innerHTML; // Escapes HTML characters
 }
 
 function updatePrompt() {
@@ -258,5 +352,3 @@ function updatePrompt() {
 }
 setInterval(updatePrompt, 10000);
 updatePrompt();
-
-renderConfessions();
