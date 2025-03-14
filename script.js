@@ -3,6 +3,7 @@ let subject = "Confessions Of...";
 const adminPassword = "yourSecretPassword"; // Change this
 const prompts = ["I regret...", "I secretly love...", "I’ll never admit...", "I once hid..."];
 let promptIndex = 0;
+let activeTopic = null;
 
 function adminSetSubject() {
     const password = prompt("Enter admin password:");
@@ -31,17 +32,47 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+document.querySelectorAll(".topic").forEach(topic => {
+    topic.addEventListener("click", () => {
+        activeTopic = activeTopic === topic.dataset.topic ? null : topic.dataset.topic;
+        document.querySelectorAll(".topic").forEach(t => t.classList.remove("active"));
+        if (activeTopic) topic.classList.add("active");
+        renderConfessions();
+    });
+});
+
+function updateParentOptions() {
+    const parentSelect = document.getElementById("parent-confession");
+    parentSelect.innerHTML = '<option value="">New Confession</option>';
+    confessions.forEach(conf => {
+        const option = document.createElement("option");
+        option.value = conf.id;
+        option.textContent = conf.text.substring(0, 20) + (conf.text.length > 20 ? "..." : "");
+        parentSelect.appendChild(option);
+    });
+}
+
 document.getElementById("confession-form").addEventListener("submit", function(e) {
     e.preventDefault();
     const text = document.getElementById("confession-input").value.trim();
     const mood = document.getElementById("mood").value;
     const category = document.getElementById("category").value;
-    if (text && category) {
+    const parentId = document.getElementById("parent-confession").value;
+    const fileInput = document.getElementById("media-input");
+    const link = document.getElementById("link-input").value.trim();
+    const media = fileInput.files[0] ? URL.createObjectURL(fileInput.files[0]) : null;
+    const mediaType = fileInput.files[0] ? (fileInput.files[0].type.startsWith("video") ? "video" : "image") : null;
+
+    if (category && (text || media || link)) {
         const confession = {
             id: Date.now(),
             text,
             mood,
             topic: category,
+            parentId: parentId || null,
+            media,
+            mediaType,
+            link,
             likes: 0,
             dislikes: 0,
             timer: null,
@@ -53,7 +84,11 @@ document.getElementById("confession-form").addEventListener("submit", function(e
         document.getElementById("confession-input").value = "";
         document.getElementById("mood").value = "";
         document.getElementById("category").value = "";
+        document.getElementById("parent-confession").value = "";
+        document.getElementById("media-input").value = "";
+        document.getElementById("link-input").value = "";
         document.getElementById("confession-window").classList.add("hidden");
+        updateParentOptions();
         renderConfessions();
     }
 });
@@ -63,23 +98,38 @@ function renderConfessions() {
     const svg = document.getElementById("web-lines");
     list.innerHTML = "";
     svg.innerHTML = "";
-    confessions = confessions.filter(c => c.likes - c.dislikes > -5 || !c.timer);
-
-    confessions.forEach((confession, index) => {
-        const topicElement = document.querySelector(`.topic[data-topic="${confession.topic}"]`);
-        const topicRect = topicElement.getBoundingClientRect();
+    const filteredConfessions = activeTopic ? confessions.filter(c => c.topic === activeTopic || confessions.some(p => p.id === c.parentId && p.topic === activeTopic)) : confessions;
+    filteredConfessions.forEach((confession, index) => {
         const logoRect = document.getElementById("logo").getBoundingClientRect();
-        const angle = parseFloat(topicElement.style.getPropertyValue("--angle")) * Math.PI / 180;
-        const radius = 350; // Increased radius for confessions
-        const x = logoRect.left + logoRect.width / 2 + radius * Math.cos(angle) - 100; // Center confession
-        const y = logoRect.top + logoRect.height / 2 + radius * Math.sin(angle) - 50;
+        let x, y;
+        if (!confession.parentId) {
+            const topicElement = document.querySelector(`.topic[data-topic="${confession.topic}"]`);
+            const angle = parseFloat(topicElement.style.getPropertyValue("--angle")) * Math.PI / 180;
+            const radius = 350;
+            x = logoRect.left + logoRect.width / 2 + radius * Math.cos(angle) - 100;
+            y = logoRect.top + logoRect.height / 2 + radius * Math.sin(angle) - 50;
+        } else {
+            const parent = confessions.find(c => c.id === confession.parentId);
+            const parentEl = document.querySelector(`.confession[data-id="${parent.id}"]`);
+            if (parentEl) {
+                const parentRect = parentEl.getBoundingClientRect();
+                x = parentRect.left + parentRect.width + 20;
+                y = parentRect.top + (index % 3) * 60 - 50;
+            } else {
+                x = logoRect.left + 200;
+                y = logoRect.top + index * 60;
+            }
+        }
 
         const div = document.createElement("div");
         div.className = "confession" + (confession.survived ? " survived" : "");
+        div.dataset.id = confession.id;
         div.style.left = `${x}px`;
         div.style.top = `${y}px`;
         div.innerHTML = `
             <p>${confession.mood ? confession.mood + " " : ""}${confession.text}</p>
+            ${confession.media ? (confession.mediaType === "video" ? `<video src="${confession.media}" controls></video>` : `<img src="${confession.media}">`) : ""}
+            ${confession.link ? `<a href="${confession.link}" target="_blank">${confession.link}</a>` : ""}
             <button onclick="vote(${confession.id}, 'like')">Like (${confession.likes})</button>
             <button onclick="vote(${confession.id}, 'dislike')">Dislike (${confession.dislikes})</button>
             <progress class="${confession.timeLeft < 60 ? 'urgent' : ''}" value="${confession.timeLeft || 0}" max="600"></progress>
@@ -93,14 +143,22 @@ function renderConfessions() {
         list.appendChild(div);
 
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        line.setAttribute("x1", logoRect.left + logoRect.width / 2);
-        line.setAttribute("y1", logoRect.top + logoRect.height / 2);
-        line.setAttribute("x2", x + 100); // Center of confession
+        if (!confession.parentId) {
+            line.setAttribute("x1", logoRect.left + logoRect.width / 2);
+            line.setAttribute("y1", logoRect.top + logoRect.height / 2);
+        } else {
+            const parentEl = document.querySelector(`.confession[data-id="${confession.parentId}"]`);
+            const parentRect = parentEl.getBoundingClientRect();
+            line.setAttribute("x1", parentRect.left + parentRect.width / 2);
+            line.setAttribute("y1", parentRect.top + parentRect.height / 2);
+        }
+        line.setAttribute("x2", x + 100);
         line.setAttribute("y2", y + 50);
         line.setAttribute("stroke", "#1A2A44");
         line.setAttribute("stroke-width", "1");
         svg.appendChild(line);
     });
+    updateParentOptions();
 }
 
 function vote(id, type) {
