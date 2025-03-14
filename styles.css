@@ -52,16 +52,9 @@ body {
     color: white;
     padding: 8px 16px;
     border-radius: 20px;
-    border: none;
     font-size: 14px;
-    cursor: pointer;
-    transform: translate(-50%, -50%) translate(200px, 0) rotate(var(--angle));
+    transform: translate(-50%, -50%) translate(300px, 0) rotate(var(--angle));
     transform-origin: 0 0;
-    transition: background 0.3s;
-}
-
-.topic:hover, .topic.active {
-    background-color: #D4A017;
 }
 
 .confession-window {
@@ -69,7 +62,7 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 400px;
+    width: 350px; /* Slightly smaller to avoid overlap */
     background: #ffffff;
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
@@ -253,7 +246,7 @@ progress::-webkit-progress-value {
 @media (max-width: 600px) {
     .confession-window { width: 90%; }
     .logo { width: 200px; }
-    .topic { transform: translate(-50%, -50%) translate(150px, 0) rotate(var(--angle)); }
+    .topic { transform: translate(-50%, -50%) translate(200px, 0) rotate(var(--angle)); }
     .reply-input { width: 60%; }
     .confession { max-width: 150px; font-size: 12px; }
 }
