@@ -3,6 +3,7 @@ let subject = "Confessions Of...";
 const adminPassword = "yourSecretPassword"; // Change this
 const prompts = ["I regret...", "I secretly love...", "I’ll never admit...", "I once hid..."];
 let promptIndex = 0;
+let selectedTopic = null;
 
 function adminSetSubject() {
     const password = prompt("Enter admin password:");
@@ -31,8 +32,20 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+document.querySelectorAll(".topic").forEach(button => {
+    button.addEventListener("click", () => {
+        document.querySelectorAll(".topic").forEach(btn => btn.classList.remove("active"));
+        button.classList.add("active");
+        selectedTopic = button.dataset.topic;
+    });
+});
+
 document.getElementById("confession-form").addEventListener("submit", function(e) {
     e.preventDefault();
+    if (!selectedTopic) {
+        alert("Please select a topic first!");
+        return;
+    }
     const text = document.getElementById("confession-input").value.trim();
     const mood = document.getElementById("mood").value;
     if (text) {
@@ -40,6 +53,7 @@ document.getElementById("confession-form").addEventListener("submit", function(e
             id: Date.now(),
             text,
             mood,
+            topic: selectedTopic,
             likes: 0,
             dislikes: 0,
             timer: null,
@@ -57,14 +71,24 @@ document.getElementById("confession-form").addEventListener("submit", function(e
 
 function renderConfessions() {
     const list = document.getElementById("confessions-list");
+    const svg = document.getElementById("web-lines");
     list.innerHTML = "";
+    svg.innerHTML = "";
     confessions = confessions.filter(c => c.likes - c.dislikes > -5 || !c.timer);
+
     confessions.forEach((confession, index) => {
+        const topicButton = document.querySelector(`.topic[data-topic="${confession.topic}"]`);
+        const topicRect = topicButton.getBoundingClientRect();
+        const logoRect = document.getElementById("logo").getBoundingClientRect();
+        const angle = parseFloat(topicButton.style.getPropertyValue("--angle")) * Math.PI / 180;
+        const radius = 250; // Distance from logo center
+        const x = logoRect.left + logoRect.width / 2 + radius * Math.cos(angle) - 100; // Center confession
+        const y = logoRect.top + logoRect.height / 2 + radius * Math.sin(angle) - 50;
+
         const div = document.createElement("div");
         div.className = "confession" + (confession.survived ? " survived" : "");
-        div.style.animationDelay = `${index * 0.5}s`; // Staggered circling
-        div.style.top = "50%";
-        div.style.left = "50%";
+        div.style.left = `${x}px`;
+        div.style.top = `${y}px`;
         div.innerHTML = `
             <p>${confession.mood ? confession.mood + " " : ""}${confession.text}</p>
             <button onclick="vote(${confession.id}, 'like')">Like (${confession.likes})</button>
@@ -78,6 +102,15 @@ function renderConfessions() {
             ${confession.survived ? `<button class="share-btn" onclick="shareReel(${confession.id})">Share Reel</button>` : ""}
         `;
         list.appendChild(div);
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", logoRect.left + logoRect.width / 2);
+        line.setAttribute("y1", logoRect.top + logoRect.height / 2);
+        line.setAttribute("x2", x + 100); // Center of confession
+        line.setAttribute("y2", y + 50);
+        line.setAttribute("stroke", "#1A2A44");
+        line.setAttribute("stroke-width", "1");
+        svg.appendChild(line);
     });
 }
 
